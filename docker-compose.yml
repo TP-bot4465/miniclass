@@ -1,0 +1,18 @@
+services:
+  miniclass:
+    build: .
+    container_name: miniclass
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - TZ=Asia/Ho_Chi_Minh
+      - DATA_DIR=/app/data
+      - DB_PATH=/app/data/miniclass.sqlite
+      - UPLOAD_DIR=/app/data/uploads
+      - BACKUP_DIR=/app/data/backups
+      - SESSION_SECRET=${SESSION_SECRET:-miniclass-prod-secret-change-me}
+    volumes:
+      - ./data:/app/data
