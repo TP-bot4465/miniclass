@@ -108,7 +108,7 @@ try {
   // Login as Admin
   const adminLogin = await req('/api/auth/login', {
     method: 'POST',
-    body: { username: 'admin', password: 'Admin1234' }
+    body: { username: 'admin', password: 'Abc1234!@' }
   });
   assert.equal(adminLogin.status, 200);
   const adminToken = adminLogin.data.token;
@@ -188,10 +188,10 @@ try {
     hsLateJoinId = c4.data.user.id;
   }
 
-  // Login as Teacher gv_minh
+  // Login as Teacher nguyenthanhphong
   const gvLogin = await req('/api/auth/login', {
     method: 'POST',
-    body: { username: 'gv_minh', password: 'Teacher123' }
+    body: { username: 'nguyenthanhphong', password: '1234' }
   });
   assert.equal(gvLogin.status, 200);
   const gvToken = gvLogin.data.token;

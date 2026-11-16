@@ -80,20 +80,45 @@ async function req(pathname, { method = 'GET', token = null, body = null } = {})
 console.log('Running MiniClass Exam & Anti-Cheat Test Suite...\n');
 
 try {
-  // Login as Teacher gv_minh and Student hs_an
+  const adminLogin = await req('/api/auth/login', {
+    method: 'POST',
+    body: { username: 'admin', password: 'Abc1234!@' }
+  });
+  assert.equal(adminLogin.status, 200);
+  const adminToken = adminLogin.data.token;
+
+  const createStu = await req('/api/admin/users', {
+    method: 'POST',
+    token: adminToken,
+    body: {
+      full_name: 'Học Sinh Kiểm Tra',
+      username: 'hs_exam_test',
+      email: 'hs_exam@student.edu.vn',
+      role: 'student',
+      password: '1234'
+    }
+  });
+  assert.equal(createStu.status, 201);
+  const stuId = createStu.data.user.id;
+
   const gvLogin = await req('/api/auth/login', {
     method: 'POST',
-    body: { username: 'gv_minh', password: 'Teacher123' }
+    body: { username: 'nguyenthanhphong', password: '1234' }
   });
   assert.equal(gvLogin.status, 200);
   const gvToken = gvLogin.data.token;
 
   const hsLogin = await req('/api/auth/login', {
     method: 'POST',
-    body: { username: 'hs_an', password: 'Student123' }
+    body: { username: 'hs_exam_test', password: '1234' }
   });
   assert.equal(hsLogin.status, 200);
   const hsToken = hsLogin.data.token;
+  await req('/api/auth/change-password', {
+    method: 'POST',
+    token: hsToken,
+    body: { oldPassword: '1234', newPassword: 'Student1234' }
+  });
 
   // 1. Download Sample CSV & Parse CSV
   {
@@ -111,11 +136,22 @@ try {
     console.log('✅ EX-01 PASSED: Tải mẫu CSV & parse câu hỏi trắc nghiệm từ CSV hoạt động chính xác.');
   }
 
-  // 2. Teacher creates an exam with MCQ + Essay (Python & C Arduino)
+  // 2. Teacher creates a class & an exam with MCQ + Essay (Python & C Arduino)
   let examId, qMcq1Id, qMcq2Id, qEssay1Id, qEssay2Id;
   {
-    const classesRes = await req('/api/classes', { token: gvToken });
-    const classId = classesRes.data.classes[0].id;
+    const clsCreate = await req('/api/classes', {
+      method: 'POST',
+      token: gvToken,
+      body: { name: 'Lớp Kiểm Tra Thực Tế', description: 'Lớp của thầy Nguyễn Thanh Phong' }
+    });
+    assert.equal(clsCreate.status, 201);
+    const classId = clsCreate.data.classId;
+
+    await req(`/api/classes/${classId}/members`, {
+      method: 'POST',
+      token: gvToken,
+      body: { studentIds: [stuId] }
+    });
 
     const createRes = await req('/api/exams', {
       method: 'POST',

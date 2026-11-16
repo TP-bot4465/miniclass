@@ -1,10 +1,14 @@
 import { getDb, seedInitialData } from '../src/db.mjs';
+import { initExamsSchema } from '../src/exams-db.mjs';
 
 const db = getDb();
-const count = db.prepare('SELECT COUNT(*) AS cnt FROM users').get().cnt;
-if (count === 0) {
-  seedInitialData(db);
-  console.log('[Seed] Initial data seeded successfully.');
-} else {
-  console.log(`[Seed] Database already contains ${count} user(s).`);
-}
+initExamsSchema(db);
+db.exec(`
+  DELETE FROM exam_anticheat_logs;
+  DELETE FROM exam_answers;
+  DELETE FROM exam_attempts;
+  DELETE FROM exam_questions;
+  DELETE FROM exams;
+`);
+seedInitialData(db);
+console.log('[Seed] Đã cập nhật dữ liệu thật: admin (Abc1234!@) và giáo viên Nguyễn Thanh Phong (nguyenthanhphong / 1234).');

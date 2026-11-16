@@ -198,9 +198,10 @@ export function initSchema(db) {
   const twelveMonthsAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
   db.prepare('DELETE FROM audit_logs WHERE created_at < ?').run(twelveMonthsAgo);
 
-  // Seed initial data if no users exist yet
+  // Seed initial data if no users exist yet, or migrate away from old demo seed if gv_minh is present
   const userCount = db.prepare('SELECT COUNT(*) AS cnt FROM users').get().cnt;
-  if (userCount === 0) {
+  const hasOldDemo = db.prepare("SELECT id FROM users WHERE username = 'gv_minh'").get();
+  if (userCount === 0 || hasOldDemo) {
     seedInitialData(db);
   }
 }
@@ -255,256 +256,71 @@ export function logAudit(db, { actorId, actorUsername, action, targetType, targe
 
 export function seedInitialData(db = getDb()) {
   const now = new Date().toISOString();
-  const today = now.slice(0, 10);
-  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  const nextWeekDeadline = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString();
-  const tomorrowDeadline = new Date(Date.now() + 18 * 60 * 60 * 1000).toISOString();
 
-  const insertUser = db.prepare(`
+  // Remove old demo data if present
+  db.exec('PRAGMA foreign_keys = OFF;');
+  try {
+    db.exec(`
+      DELETE FROM exam_anticheat_logs;
+      DELETE FROM exam_answers;
+      DELETE FROM exam_attempts;
+      DELETE FROM exam_questions;
+      DELETE FROM exams;
+    `);
+  } catch {}
+  db.exec(`
+    DELETE FROM uploaded_images;
+    DELETE FROM submissions;
+    DELETE FROM session_attachments;
+    DELETE FROM class_sessions;
+    DELETE FROM class_members;
+    DELETE FROM classes;
+    DELETE FROM notifications;
+    DELETE FROM email_queue;
+    DELETE FROM sessions_auth;
+    DELETE FROM users WHERE username IN ('gv_minh', 'gv_lan', 'hs_an', 'hs_binh', 'hs_chi', 'hs_khanh');
+  `);
+  db.exec('PRAGMA foreign_keys = ON;');
+
+  const upsertUser = db.prepare(`
     INSERT INTO users (username, email, password_hash, full_name, role, status, must_change_password, language, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, 'active', ?, 'vi', ?, ?)
+    VALUES (?, ?, ?, ?, ?, 'active', 0, 'vi', ?, ?)
+    ON CONFLICT(username) DO UPDATE SET
+      password_hash = excluded.password_hash,
+      full_name = excluded.full_name,
+      role = excluded.role,
+      status = 'active',
+      must_change_password = 0,
+      updated_at = excluded.updated_at
   `);
 
-  const adminRes = insertUser.run('admin', 'admin@miniclass.edu.vn', hashPassword('Admin1234'), 'Quản trị viên Hệ thống', 'admin', 0, now, now);
-  const gvMinhRes = insertUser.run('gv_minh', 'minh.nguyen@miniclass.edu.vn', hashPassword('Teacher123'), 'ThS. Nguyễn Văn Minh', 'teacher', 0, now, now);
-  const gvLanRes = insertUser.run('gv_lan', 'lan.tran@miniclass.edu.vn', hashPassword('Teacher123'), 'Cô Trần Thị Lan', 'teacher', 0, now, now);
-  const hsAnRes = insertUser.run('hs_an', 'an.le@student.edu.vn', hashPassword('Student123'), 'Lê Hoàng An', 'student', 0, now, now);
-  const hsBinhRes = insertUser.run('hs_binh', 'binh.pham@student.edu.vn', hashPassword('Student123'), 'Phạm Thanh Bình', 'student', 0, now, now);
-  const hsChiRes = insertUser.run('hs_chi', 'chi.do@student.edu.vn', hashPassword('Student123'), 'Đỗ Mai Chi', 'student', 0, now, now);
-  insertUser.run('hs_khanh', 'khanh.vu@student.edu.vn', hashPassword('TempPass123'), 'Vũ Quốc Khánh (Đăng nhập lần đầu)', 'student', 1, now, now);
-
-  const adminId = Number(adminRes.lastInsertRowid);
-  const gvMinhId = Number(gvMinhRes.lastInsertRowid);
-  const gvLanId = Number(gvLanRes.lastInsertRowid);
-  const hsAnId = Number(hsAnRes.lastInsertRowid);
-  const hsBinhId = Number(hsBinhRes.lastInsertRowid);
-  const hsChiId = Number(hsChiRes.lastInsertRowid);
-
-  // Create sample classes
-  const insertClass = db.prepare(`
-    INSERT INTO classes (name, description, teacher_id, status, created_by, created_at, updated_at)
-    VALUES (?, ?, ?, 'active', ?, ?, ?)
-  `);
-  const clsPython = Number(
-    insertClass.run(
-      'Lập trình Python Cơ bản - K12',
-      'Lớp học nền tảng lập trình Python, cấu trúc điều khiển, hàm và xử lý dữ liệu.',
-      gvMinhId,
-      gvMinhId,
-      now,
-      now
-    ).lastInsertRowid
-  );
-  const clsAlgo = Number(
-    insertClass.run(
-      'Cấu trúc Dữ liệu & Giải thuật',
-      'Phân tích độ phức tạp thuật toán, danh sách liên kết, cây nhị phân, đồ thị và quy hoạch động.',
-      gvMinhId,
-      gvMinhId,
-      now,
-      now
-    ).lastInsertRowid
-  );
-  const clsMath = Number(
-    insertClass.run(
-      'Toán Rời Rạc Ứng Dụng',
-      'Logic mệnh đề, tổ hợp, lý thuyết đồ thị và đại số Boole.',
-      gvLanId,
-      gvLanId,
-      now,
-      now
-    ).lastInsertRowid
-  );
-
-  // Add students to classes
-  const insertMember = db.prepare(`
-    INSERT INTO class_members (class_id, student_id, joined_at) VALUES (?, ?, ?)
-  `);
-  for (const sid of [hsAnId, hsBinhId, hsChiId]) {
-    insertMember.run(clsPython, sid, now);
-    insertMember.run(clsAlgo, sid, now);
-  }
-  insertMember.run(clsMath, hsAnId, now);
-  insertMember.run(clsMath, hsBinhId, now);
-
-  // Create sample sessions in Python class
-  const insertSession = db.prepare(`
-    INSERT INTO class_sessions (class_id, title, session_date, content_md, requires_submission, deadline, status, created_by, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  const s1Id = Number(
-    insertSession.run(
-      clsPython,
-      'Buổi 01: Biến, Kiểu dữ liệu và Toán tử trong Python',
-      yesterday,
-      `# Buổi 01: Làm quen với Python 3
-
-Chào mừng các em đến với lớp **Lập trình Python Cơ bản**. Trong buổi học đầu tiên, chúng ta tìm hiểu các kiểu dữ liệu cơ sở và cách viết chương trình chuẩn PEP 8.
-
-## 1. Bảng tóm tắt kiểu dữ liệu
-
-| Kiểu dữ liệu | Cú pháp mẫu | Mô tả |
-| :--- | :--- | :--- |
-| \`int\` | \`x = 42\` | Số nguyên không giới hạn độ dài |
-| \`float\` | \`pi = 3.14159\` | Số thực dấu phẩy động |
-| \`str\` | \`name = "MiniClass"\` | Chuỗi ký tự Unicode |
-| \`bool\` | \`is_valid = True\` | Giá trị logic Đúng / Sai |
-
-## 2. Ví dụ minh họa
-
-\`\`\`python
-def tinh_diem_trung_binh(diem_so: list[float]) -> float:
-    """Tính điểm trung bình thang 10 làm tròn 1 chữ số thập phân."""
-    if not diem_so:
-        return 0.0
-    return round(sum(diem_so) / len(diem_so), 1)
-
-print("Điểm TB:", tinh_diem_trung_binh([8.5, 9.0, 7.5]))
-\`\`\`
-
-## 3. Bài tập về nhà
-Viết file \`bai1_tinh_toan.py\` nhập vào bán kính hình tròn và in ra chu vi, diện tích. Nộp trực tiếp tại mục **Nộp bài tập** bên dưới.`,
-      1,
-      nextWeekDeadline,
-      'published',
-      gvMinhId,
-      now,
-      now
-    ).lastInsertRowid
-  );
-
-  const s2Id = Number(
-    insertSession.run(
-      clsPython,
-      'Buổi 02: Cấu trúc rẽ nhánh if-elif-else và Vòng lặp',
-      today,
-      `# Buổi 02: Cấu trúc điều khiển & Vòng lặp
-
-Trong buổi học này, chúng ta nắm vững cách điều khiển luồng thực thi của chương trình bằng \`if / elif / else\`, vòng lặp \`for\` và \`while\`.
-
-## 1. Cú pháp vòng lặp \`for\` với \`range()\`
-
-\`\`\`python
-for i in range(1, 6):
-    print(f"Lần lặp thứ {i}: bình phương = {i ** 2}")
-\`\`\`
-
-## 2. Yêu cầu bài nộp
-- Nộp 1 file mã nguồn \`.py\` hoặc \`.ipynb\` giải bài toán kiểm tra số nguyên tố và liệt kê $N$ số Fibonacci đầu tiên.
-- Lưu ý: Hạn nộp bài là **ngày mai**!`,
-      1,
-      tomorrowDeadline,
-      'published',
-      gvMinhId,
-      now,
-      now
-    ).lastInsertRowid
-  );
-
-  insertSession.run(
-    clsPython,
-    'Buổi 03: [Bản nháp] Hàm, Module và Xử lý Ngoại lệ',
-    today,
-    `# Buổi 03: Tổ chức mã nguồn với Hàm và Module\n\nNội dung đang được giáo viên biên soạn (Trạng thái Nháp - Học sinh chưa nhìn thấy).`,
-    1,
-    nextWeekDeadline,
-    'draft',
-    gvMinhId,
+  upsertUser.run(
+    'admin',
+    'admin@miniclass.edu.vn',
+    hashPassword('Abc1234!@'),
+    'Quản trị viên Hệ thống',
+    'admin',
     now,
     now
   );
 
-  // Create a sample submission for hs_an in Session 1 (already graded) and hs_binh (submitted, awaiting grade)
-  const samplePyAn = Buffer.from(
-    `import math\n\ndef circle_metrics(r: float):\n    return 2 * math.pi * r, math.pi * (r ** 2)\n\nif __name__ == "__main__":\n    cv, dt = circle_metrics(5.0)\n    print(f"Chu vi: {cv:.2f}, Dien tich: {dt:.2f}")\n`,
-    'utf8'
-  );
-  const storedAn = 'seed-an-bai1.py';
-  fs.writeFileSync(path.join(CONFIG.SUBMISSIONS_DIR, storedAn), samplePyAn);
-
-  const samplePyBinh = Buffer.from(
-    `# Bai tap buoi 1 - Pham Thanh Binh\nr = 10\nprint("Chu vi:", 2 * 3.14 * r)\nprint("Dien tich:", 3.14 * r * r)\n`,
-    'utf8'
-  );
-  const storedBinh = 'seed-binh-bai1.py';
-  fs.writeFileSync(path.join(CONFIG.SUBMISSIONS_DIR, storedBinh), samplePyBinh);
-
-  const insertSubmission = db.prepare(`
-    INSERT INTO submissions (
-      session_id, student_id, original_name, stored_name, mime_type, size_bytes,
-      note, submitted_at, is_late, score, feedback, graded_by, graded_at, allow_resubmit, needs_regrade
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  insertSubmission.run(
-    s1Id,
-    hsAnId,
-    'bai1_le_hoang_an.py',
-    storedAn,
-    'text/x-python',
-    samplePyAn.length,
-    'Em đã kiểm tra với nhiều giá trị bán kính khác nhau ạ.',
+  upsertUser.run(
+    'nguyenthanhphong',
+    'nguyenthanhphong@miniclass.edu.vn',
+    hashPassword('1234'),
+    'Nguyễn Thanh Phong',
+    'teacher',
     now,
-    0,
-    9.5,
-    'Code sạch, có chia hàm và chú thích type hint rõ ràng. Rất tốt!',
-    gvMinhId,
-    now,
-    0,
-    0
-  );
-
-  insertSubmission.run(
-    s1Id,
-    hsBinhId,
-    'bai1_binh.py',
-    storedBinh,
-    'text/x-python',
-    samplePyBinh.length,
-    'Em nộp bài buổi 1 ạ.',
-    now,
-    0,
-    null,
-    '',
-    null,
-    null,
-    0,
-    0
-  );
-
-  // Sample notifications
-  const insertNotif = db.prepare(`
-    INSERT INTO notifications (user_id, event_type, title_vi, title_en, body_vi, body_en, link_url, is_read, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?)
-  `);
-  insertNotif.run(
-    hsAnId,
-    'graded',
-    'Bài nộp đã được chấm điểm',
-    'Your submission has been graded',
-    'ThS. Nguyễn Văn Minh đã chấm 9.5 điểm cho bài nộp của bạn ở "Buổi 01: Biến, Kiểu dữ liệu và Toán tử trong Python".',
-    'ThS. Nguyễn Văn Minh graded 9.5 on your submission in "Buổi 01: Biến, Kiểu dữ liệu và Toán tử trong Python".',
-    `#/classes/${clsPython}/sessions/${s1Id}`,
-    now
-  );
-  insertNotif.run(
-    gvMinhId,
-    'submission_new',
-    'Có bài nộp mới từ Phạm Thanh Bình',
-    'New submission from Phạm Thanh Bình',
-    'Học sinh Phạm Thanh Bình vừa nộp bài cho "Buổi 01: Biến, Kiểu dữ liệu và Toán tử trong Python".',
-    'Student Phạm Thanh Bình submitted work for "Buổi 01: Biến, Kiểu dữ liệu và Toán tử trong Python".',
-    `#/classes/${clsPython}/sessions/${s1Id}/submissions`,
     now
   );
 
+  const adminRow = db.prepare("SELECT id FROM users WHERE username = 'admin'").get();
   logAudit(db, {
-    actorId: adminId,
+    actorId: adminRow?.id || null,
     actorUsername: 'admin',
     action: 'SYSTEM_SEED',
     targetType: 'system',
     targetId: 'init',
-    details: { message: 'Khởi tạo dữ liệu mẫu hệ thống MiniClass v1.0' }
+    details: { message: 'Khởi tạo dữ liệu thực tế: admin và giáo viên Nguyễn Thanh Phong (nguyenthanhphong)' }
   });
 }

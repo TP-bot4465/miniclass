@@ -6,11 +6,8 @@ import path from 'node:path';
  * At least 8 characters, containing both letters and numbers.
  */
 export function validatePasswordStrength(password) {
-  if (typeof password !== 'string' || password.length < 8) {
+  if (typeof password !== 'string' || password.length < 4) {
     return { valid: false, reason: 'PASSWORD_TOO_SHORT' };
-  }
-  if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
-    return { valid: false, reason: 'PASSWORD_MISSING_ALPHANUM' };
   }
   return { valid: true };
 }

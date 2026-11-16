@@ -349,28 +349,13 @@ function renderLoginScreen() {
         </form>
 
         <div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--border-color);">
-          <div style="font-size:12.5px;color:var(--text-muted);">${t('login_demo_hint')}</div>
-          <div class="demo-chip-list">
-            <button type="button" class="demo-chip" data-u="admin" data-p="Admin1234">Admin (admin)</button>
-            <button type="button" class="demo-chip" data-u="gv_minh" data-p="Teacher123">GV Nguyễn Văn Minh (gv_minh)</button>
-            <button type="button" class="demo-chip" data-u="hs_an" data-p="Student123">HS Lê Hoàng An (hs_an)</button>
-            <button type="button" class="demo-chip" data-u="hs_binh" data-p="Student123">HS Phạm Thanh Bình (hs_binh)</button>
-            <button type="button" class="demo-chip" data-u="hs_khanh" data-p="TempPass123">HS Lần đầu (hs_khanh)</button>
-          </div>
-          <p style="font-size:12px;color:var(--text-muted);margin:12px 0 0;">
+          <p style="font-size:12px;color:var(--text-muted);margin:0;">
             ${t('login_no_register_note')}
           </p>
         </div>
       </div>
     </div>
   `;
-
-  app.querySelectorAll('.demo-chip').forEach((chip) => {
-    chip.addEventListener('click', () => {
-      document.getElementById('login-username').value = chip.dataset.u;
-      document.getElementById('login-password').value = chip.dataset.p;
-    });
-  });
 
   document.getElementById('login-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -1052,8 +1037,8 @@ async function renderAdminUsersScreen() {
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">${t('usr_temp_password')} * (≥ 8 ký tự, gồm chữ và số)</label>
-            <input type="text" id="cu-pwd" class="form-input" value="TempPass123" required />
+            <label class="form-label">${t('usr_temp_password')} *</label>
+            <input type="text" id="cu-pwd" class="form-input" value="1234" required />
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-ghost" id="cu-cancel">${t('btn_cancel')}</button>
