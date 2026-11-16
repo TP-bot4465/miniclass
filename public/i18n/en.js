@@ -3,6 +3,7 @@ export const EN = {
   app_tagline: 'Minimalist Online Classroom System',
   nav_dashboard: 'Dashboard',
   nav_classes: 'Classes',
+  nav_exams: 'Exams',
   nav_users: 'Users',
   nav_audit: 'Audit Logs',
   nav_settings: 'Settings',
@@ -37,14 +38,14 @@ export const EN = {
   login_username: 'Username',
   login_password: 'Password',
   login_btn: 'Sign In',
-  login_demo_hint: 'Quick Demo Accounts (Click to autofill):',
+  login_demo_hint: 'Quick Demo Accounts (click to autofill):',
   login_no_register_note: 'Self-registration is disabled. Contact the Administrator to request an account.',
 
   // S02 Change Password
   pwd_change_title: 'Change Password',
   pwd_force_banner: 'You are signing in with a temporary password. Please set a new password to continue.',
   pwd_old: 'Current Password',
-  pwd_new: 'New Password (≥ 8 chars, letters & numbers)',
+  pwd_new: 'New Password (at least 8 chars, letters & numbers)',
   pwd_confirm: 'Confirm New Password',
   pwd_submit: 'Update Password',
   pwd_mismatch: 'Confirmation password does not match.',
@@ -65,7 +66,7 @@ export const EN = {
 
   // S04 User Management (Admin)
   usr_title: 'User Management',
-  usr_create_btn: '+ Create Account',
+  usr_create_btn: 'Create Account',
   usr_import_btn: 'Import CSV',
   usr_search_placeholder: 'Search by full name, username, or email...',
   usr_filter_all_roles: 'All Roles',
@@ -90,7 +91,7 @@ export const EN = {
 
   // S05 Class Management
   cls_title: 'Class Directory',
-  cls_create_btn: '+ Create New Class',
+  cls_create_btn: 'Create New Class',
   cls_name: 'Class Name',
   cls_desc: 'Class Description',
   cls_teacher: 'Assigned Teacher',
@@ -106,10 +107,10 @@ export const EN = {
   tab_sessions: 'Sessions & Lectures',
   tab_members: 'Class Members',
   tab_gradebook: 'Gradebook',
-  cls_back_list: '← All Classes',
+  cls_back_list: 'All Classes',
 
   // S07 Members
-  mem_add_btn: '+ Add Students to Class',
+  mem_add_btn: 'Add Students to Class',
   mem_search_student: 'Search active students by name or username...',
   mem_col_progress: 'Submission Progress',
   mem_remove: 'Remove',
@@ -123,7 +124,7 @@ export const EN = {
   grd_empty_sessions: 'No sessions requiring submissions in this class yet.',
 
   // S09, S10 Sessions
-  ses_create_btn: '+ Create Session',
+  ses_create_btn: 'Create Session',
   ses_edit_btn: 'Edit Session',
   ses_delete_btn: 'Delete Session',
   ses_title_label: 'Session Title *',
@@ -133,8 +134,8 @@ export const EN = {
   ses_content_label: 'Lecture Content (Markdown) *',
   ses_tab_write: 'Write Markdown',
   ses_tab_preview: 'Live Preview',
-  ses_attachments_label: 'Attachments (≤ 20 MB/file, max 10 files)',
-  ses_add_attachment: '+ Attach File',
+  ses_attachments_label: 'Attachments (max 20 MB/file, 10 files)',
+  ses_add_attachment: 'Attach File',
   ses_insert_image: 'Insert Image',
   ses_save_draft: 'Save Draft',
   ses_publish: 'Publish Session',
@@ -146,7 +147,7 @@ export const EN = {
   // S10 Student Submission Area
   sub_box_title: 'Assignment Submission',
   sub_drop_hint: 'Drag & drop 1 file here or click to browse',
-  sub_note_label: 'Short note for teacher (optional, ≤ 500 chars)',
+  sub_note_label: 'Short note for teacher (optional, max 500 chars)',
   sub_submit_btn: 'Submit Assignment',
   sub_resubmit_btn: 'Upload New Submission',
   sub_replace_confirm: 'You already have a submission. Uploading a new file will replace your previous file. Continue?',
@@ -171,7 +172,7 @@ export const EN = {
   grd_modal_title: 'Grade & Review Submission',
   grd_preview_title: 'File Preview',
   grd_score_input: 'Score (0 – 10, max 1 decimal place, e.g., 8.5)',
-  grd_feedback_input: 'Detailed Feedback (≤ 2000 chars)',
+  grd_feedback_input: 'Detailed Feedback (max 2000 chars)',
   grd_save_btn: 'Save Grade & Feedback',
   grd_allow_resubmit_btn: 'Allow Student to Resubmit',
   grd_download_file: 'Download File',
@@ -204,7 +205,7 @@ export const EN = {
   adm_allowed_exts: 'Allowed Student Submission Extensions (comma-separated)',
   adm_max_sub_size: 'Maximum Student Submission File Size (MB)',
   adm_badge_mode: 'Status Badge Color Mode (UI-02 / OI-01)',
-  adm_badge_subtle: 'Subtle Muted Red / Green Badges (Recommended)',
+  adm_badge_subtle: 'Standard Accent Badges',
   adm_badge_mono: 'Strict Monochrome Black-White-Gray',
   adm_email_outbox: 'System Email Outbox Queue (Async)',
   adm_run_jobs: 'Run 24h Deadline Reminders & Daily Digest Now',
@@ -214,7 +215,7 @@ export const EN = {
   btn_confirm: 'Confirm',
   btn_save: 'Save',
   btn_close: 'Close',
-  btn_back: '← Back',
+  btn_back: 'Back',
   loading: 'Loading...',
   empty_data: 'No data to display.'
 };

@@ -4,7 +4,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CONFIG } from './config.mjs';
 import { getDb } from './db.mjs';
+import { initExamsSchema } from './exams-db.mjs';
 import { handleApiRequest, sendJson } from './routes/api.mjs';
+import { handleExamsApiRequest } from './routes/exams-api.mjs';
 import { processEmailQueue, runDeadlineReminders } from './email.mjs';
 
 const MIME_TYPES = {
@@ -22,7 +24,8 @@ const MIME_TYPES = {
 
 export function createAppServer() {
   // Initialize DB & seed if empty
-  getDb();
+  const db = getDb();
+  initExamsSchema(db);
 
   const server = http.createServer(async (req, res) => {
     try {
@@ -37,6 +40,15 @@ export function createAppServer() {
           'X-Content-Type-Options': 'nosniff'
         });
         res.end('404 Not Found - Self-registration is disabled (BR-01 / AC-01).');
+        return;
+      }
+
+      if (
+        pathname.startsWith('/api/exams') ||
+        pathname.startsWith('/api/exam-attempts') ||
+        pathname.startsWith('/api/exam-answers')
+      ) {
+        await handleExamsApiRequest(req, res, urlObj);
         return;
       }
 
@@ -117,4 +129,13 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(currentFil
     runDeadlineReminders();
   }, 10 * 60_000);
   reminderTimer.unref();
+
+  // Keep Render Free Tier awake 24/7 automatically when RENDER_EXTERNAL_URL is set
+  if (process.env.RENDER_EXTERNAL_URL && process.env.KEEP_ALIVE_24_7 !== 'false') {
+    const pingUrl = `${process.env.RENDER_EXTERNAL_URL.replace(/\/$/, '')}/api/public/config`;
+    const keepAliveTimer = setInterval(() => {
+      fetch(pingUrl).catch(() => {});
+    }, 12 * 60_000);
+    keepAliveTimer.unref();
+  }
 }

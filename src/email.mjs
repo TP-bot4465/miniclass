@@ -60,6 +60,52 @@ export function notifyUser(
   }
 }
 
+async function sendRealEmailIfConfigured(item) {
+  // 1. Resend API (https://resend.com - 3,000 emails/month free)
+  if (CONFIG.SMTP.resendApiKey) {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${CONFIG.SMTP.resendApiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: CONFIG.SMTP.from,
+        to: [item.to_email],
+        subject: item.subject,
+        text: item.body_text
+      })
+    });
+    if (!res.ok) {
+      const errTxt = await res.text();
+      throw new Error(`Resend HTTP ${res.status}: ${errTxt}`);
+    }
+    return;
+  }
+
+  // 2. Brevo API (https://brevo.com - 300 emails/day free)
+  if (CONFIG.SMTP.brevoApiKey) {
+    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'api-key': CONFIG.SMTP.brevoApiKey,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        sender: { name: 'MiniClass', email: CONFIG.SMTP.user || 'noreply@miniclass.local' },
+        to: [{ email: item.to_email }],
+        subject: item.subject,
+        textContent: item.body_text
+      })
+    });
+    if (!res.ok) {
+      const errTxt = await res.text();
+      throw new Error(`Brevo HTTP ${res.status}: ${errTxt}`);
+    }
+    return;
+  }
+}
+
 /**
  * Process pending emails in the queue asynchronously (NOT-04).
  */
@@ -74,7 +120,7 @@ export async function processEmailQueue() {
 
     for (const item of pending) {
       try {
-        // In local/dev mode or when SMTP_ENABLED=false, mark as sent and keep in outbox log
+        await sendRealEmailIfConfigured(item);
         db.prepare(`
           UPDATE email_queue
           SET status = 'sent', sent_at = ?, error_message = NULL

@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: miniclass
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/public/config
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: TZ
+        value: Asia/Ho_Chi_Minh
+      - key: DATA_DIR
+        value: /app/data
+      - key: DB_PATH
+        value: /app/data/miniclass.sqlite
+      - key: UPLOAD_DIR
+        value: /app/data/uploads
+      - key: BACKUP_DIR
+        value: /app/data/backups
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: KEEP_ALIVE_24_7
+        value: "true"

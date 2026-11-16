@@ -3,6 +3,7 @@ export const VI = {
   app_tagline: 'Hệ thống Lớp học Trực tuyến Tối giản',
   nav_dashboard: 'Trang chủ',
   nav_classes: 'Lớp học',
+  nav_exams: 'Kiểm tra',
   nav_users: 'Người dùng',
   nav_audit: 'Nhật ký hệ thống',
   nav_settings: 'Cấu hình',
@@ -37,14 +38,14 @@ export const VI = {
   login_username: 'Tên đăng nhập (Username)',
   login_password: 'Mật khẩu',
   login_btn: 'Đăng nhập',
-  login_demo_hint: 'Tài khoản dùng thử nhanh (Click để điền):',
+  login_demo_hint: 'Tài khoản dùng thử nhanh (chọn để điền):',
   login_no_register_note: 'Hệ thống không có chức năng tự đăng ký. Liên hệ Quản trị viên để được cấp tài khoản.',
 
   // S02 Change Password
   pwd_change_title: 'Đổi mật khẩu',
   pwd_force_banner: 'Bạn đang sử dụng mật khẩu tạm thời. Vui lòng đổi mật khẩu mới để tiếp tục sử dụng hệ thống.',
   pwd_old: 'Mật khẩu hiện tại',
-  pwd_new: 'Mật khẩu mới (≥ 8 ký tự, gồm chữ và số)',
+  pwd_new: 'Mật khẩu mới (tối thiểu 8 ký tự, gồm chữ và số)',
   pwd_confirm: 'Xác nhận mật khẩu mới',
   pwd_submit: 'Cập nhật mật khẩu',
   pwd_mismatch: 'Mật khẩu xác nhận không khớp.',
@@ -65,7 +66,7 @@ export const VI = {
 
   // S04 User Management (Admin)
   usr_title: 'Quản lý người dùng',
-  usr_create_btn: '+ Tạo tài khoản',
+  usr_create_btn: 'Tạo tài khoản',
   usr_import_btn: 'Nhập từ CSV',
   usr_search_placeholder: 'Tìm theo họ tên, username hoặc email...',
   usr_filter_all_roles: 'Tất cả vai trò',
@@ -90,7 +91,7 @@ export const VI = {
 
   // S05 Class Management
   cls_title: 'Danh sách lớp học',
-  cls_create_btn: '+ Tạo lớp mới',
+  cls_create_btn: 'Tạo lớp mới',
   cls_name: 'Tên lớp học',
   cls_desc: 'Mô tả lớp học',
   cls_teacher: 'Giáo viên phụ trách',
@@ -106,10 +107,10 @@ export const VI = {
   tab_sessions: 'Buổi học & Bài giảng',
   tab_members: 'Thành viên lớp',
   tab_gradebook: 'Bảng điểm',
-  cls_back_list: '← Danh sách lớp',
+  cls_back_list: 'Danh sách lớp',
 
   // S07 Members
-  mem_add_btn: '+ Thêm học sinh vào lớp',
+  mem_add_btn: 'Thêm học sinh vào lớp',
   mem_search_student: 'Tìm học sinh theo tên hoặc username...',
   mem_col_progress: 'Tiến độ nộp bài',
   mem_remove: 'Xóa khỏi lớp',
@@ -123,7 +124,7 @@ export const VI = {
   grd_empty_sessions: 'Lớp chưa có buổi học nào yêu cầu nộp bài.',
 
   // S09, S10 Sessions
-  ses_create_btn: '+ Tạo buổi học mới',
+  ses_create_btn: 'Tạo buổi học mới',
   ses_edit_btn: 'Sửa buổi học',
   ses_delete_btn: 'Xóa buổi học',
   ses_title_label: 'Tiêu đề buổi học *',
@@ -133,8 +134,8 @@ export const VI = {
   ses_content_label: 'Nội dung bài giảng (Markdown) *',
   ses_tab_write: 'Soạn thảo Markdown',
   ses_tab_preview: 'Xem trước (Preview)',
-  ses_attachments_label: 'Tài liệu đính kèm (≤ 20 MB/file, tối đa 10 file)',
-  ses_add_attachment: '+ Đính kèm file',
+  ses_attachments_label: 'Tài liệu đính kèm (tối đa 20 MB/file, 10 file)',
+  ses_add_attachment: 'Đính kèm file',
   ses_insert_image: 'Chèn ảnh',
   ses_save_draft: 'Lưu nháp',
   ses_publish: 'Công bố buổi học',
@@ -146,7 +147,7 @@ export const VI = {
   // S10 Student Submission Area
   sub_box_title: 'Nộp bài tập',
   sub_drop_hint: 'Kéo thả 1 file vào đây hoặc bấm để chọn file',
-  sub_note_label: 'Ghi chú ngắn cho giáo viên (tùy chọn, ≤ 500 ký tự)',
+  sub_note_label: 'Ghi chú ngắn cho giáo viên (tùy chọn, tối đa 500 ký tự)',
   sub_submit_btn: 'Nộp bài',
   sub_resubmit_btn: 'Nộp lại bài mới',
   sub_replace_confirm: 'Bạn đã có bài nộp trước đó. Bài nộp mới sẽ thay thế hoàn toàn bài nộp cũ. Bạn có chắc chắn muốn tiếp tục?',
@@ -171,7 +172,7 @@ export const VI = {
   grd_modal_title: 'Chấm điểm & Nhận xét bài nộp',
   grd_preview_title: 'Xem trước nội dung file',
   grd_score_input: 'Điểm số (0 – 10, tối đa 1 chữ số thập phân, vd: 8.5)',
-  grd_feedback_input: 'Nhận xét chi tiết (≤ 2000 ký tự)',
+  grd_feedback_input: 'Nhận xét chi tiết (tối đa 2000 ký tự)',
   grd_save_btn: 'Lưu điểm & Nhận xét',
   grd_allow_resubmit_btn: 'Cho phép học sinh nộp lại',
   grd_download_file: 'Tải file về máy',
@@ -204,7 +205,7 @@ export const VI = {
   adm_allowed_exts: 'Danh sách đuôi file cho phép Học sinh nộp (cách nhau dấu phẩy)',
   adm_max_sub_size: 'Dung lượng tối đa file bài nộp của Học sinh (MB)',
   adm_badge_mode: 'Chế độ màu nhãn trạng thái (UI-02 / OI-01)',
-  adm_badge_subtle: 'Đỏ trầm / Xanh lá trầm ở nhãn nhỏ (Khuyên dùng)',
+  adm_badge_subtle: 'Nhãn màu nhấn tiêu chuẩn',
   adm_badge_mono: 'Thuần Đen - Trắng - Xám (100% Monochrome)',
   adm_email_outbox: 'Hàng đợi Email hệ thống (Async Outbox Queue)',
   adm_run_jobs: 'Chạy kiểm tra nhắc hạn 24h & Email tổng hợp ngay',
@@ -214,7 +215,7 @@ export const VI = {
   btn_confirm: 'Xác nhận',
   btn_save: 'Lưu',
   btn_close: 'Đóng',
-  btn_back: '← Quay lại',
+  btn_back: 'Quay lại',
   loading: 'Đang tải dữ liệu...',
   empty_data: 'Không có dữ liệu hiển thị.'
 };

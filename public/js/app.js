@@ -1,6 +1,13 @@
 import { VI } from '/i18n/vi.js';
 import { EN } from '/i18n/en.js';
 import { renderMarkdown, escapeHtml, highlightCode } from '/js/markdown.js';
+import {
+  renderExamsListScreen,
+  renderExamEditorScreen,
+  renderExamTakeOrViewScreen,
+  renderExamAttemptsScreen,
+  cleanupExamListeners
+} from '/js/exams.js';
 
 const DICT = { vi: VI, en: EN };
 
@@ -176,7 +183,7 @@ export function openModal({ title, bodyHtml, size = '', onMount }) {
       <div class="modal-box ${size === 'lg' ? 'modal-lg' : ''}" role="dialog" aria-modal="true">
         <div class="modal-header">
           <h3 class="modal-title">${escapeHtml(title)}</h3>
-          <button type="button" class="btn btn-ghost btn-sm" id="modal-close-x" aria-label="Close">✕</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="modal-close-x" aria-label="Close">${t('btn_close')}</button>
         </div>
         <div class="modal-body" id="modal-body-content">${bodyHtml}</div>
       </div>
@@ -211,10 +218,7 @@ function renderNavbar() {
     navRoot.innerHTML = `
       <nav class="navbar">
         <div class="navbar-inner">
-          <a href="#/login" class="brand">
-            <span class="brand-mark">M</span>
-            <span>${t('app_name')}</span>
-          </a>
+          <a href="#/login" class="brand">${t('app_name')}</a>
           <div class="nav-actions">
             <div class="lang-switch" role="group" aria-label="Language Switcher">
               <button type="button" class="lang-btn ${state.lang === 'vi' ? 'active' : ''}" data-lang="vi">VI</button>
@@ -239,14 +243,12 @@ function renderNavbar() {
     <nav class="navbar">
       <div class="navbar-inner">
         <div style="display:flex;align-items:center;gap:14px;">
-          <button type="button" class="hamburger-btn" id="hamburger-toggle" aria-label="Menu">☰</button>
-          <a href="#/" class="brand">
-            <span class="brand-mark">M</span>
-            <span>${t('app_name')}</span>
-          </a>
+          <button type="button" class="hamburger-btn" id="hamburger-toggle" aria-label="Menu">Menu</button>
+          <a href="#/" class="brand">${t('app_name')}</a>
           <div class="nav-links ${state.mobileMenuOpen ? 'mobile-open' : ''}" id="nav-links-container">
             <a href="#/" class="nav-link ${hash === '#/' ? 'active' : ''}">${t('nav_dashboard')}</a>
             <a href="#/classes" class="nav-link ${hash.startsWith('#/classes') ? 'active' : ''}">${t('nav_classes')}</a>
+            <a href="#/exams" class="nav-link ${hash.startsWith('#/exams') ? 'active' : ''}">${t('nav_exams')}</a>
             ${
               state.user.role === 'admin'
                 ? `
@@ -267,12 +269,12 @@ function renderNavbar() {
           </div>
 
           <a href="#/notifications" class="bell-btn" title="${t('nav_notifications')}" aria-label="${t('nav_notifications')}">
-            <span>🔔</span>
+            <span>${t('nav_notifications')}</span>
             ${state.unreadNotifications > 0 ? `<span class="bell-count">${state.unreadNotifications}</span>` : ''}
           </a>
 
-          <a href="#/profile" class="badge" style="text-decoration:none;" title="${escapeHtml(state.user.username)}">
-            ${escapeHtml(state.user.full_name)} (${escapeHtml(roleLabel)})
+          <a href="#/profile" class="badge" style="text-decoration:none;" title="${escapeHtml(state.user.full_name)}">
+            ${escapeHtml(state.user.username)} (${escapeHtml(roleLabel)})
           </a>
 
           <button type="button" class="btn btn-ghost btn-sm" id="btn-logout">${t('nav_logout')}</button>
@@ -347,7 +349,7 @@ function renderLoginScreen() {
         </form>
 
         <div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--border-color);">
-          <div style="font-size:12.5px;color:var(--text-muted);font-weight:600;">${t('login_demo_hint')}</div>
+          <div style="font-size:12.5px;color:var(--text-muted);">${t('login_demo_hint')}</div>
           <div class="demo-chip-list">
             <button type="button" class="demo-chip" data-u="admin" data-p="Admin1234">Admin (admin)</button>
             <button type="button" class="demo-chip" data-u="gv_minh" data-p="Teacher123">GV Nguyễn Văn Minh (gv_minh)</button>
@@ -526,7 +528,7 @@ async function renderDashboardScreen() {
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
             <h2 style="margin:0;font-size:17px;">${t('dash_recent_audit')}</h2>
-            <a href="#/admin/audit" class="btn btn-ghost btn-sm">${t('nav_audit')} →</a>
+            <a href="#/admin/audit" class="btn btn-ghost btn-sm">${t('nav_audit')}</a>
           </div>
           <div class="table-wrap">
             <table class="data-table">
@@ -743,7 +745,7 @@ async function renderAdminUsersScreen() {
             <td><span class="badge">${escapeHtml(roleLabel)}</span></td>
             <td>${statusBadge}</td>
             <td>
-              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <div style="display:flex;gap:6px;flex-wrap:nowrap;">
                 <button type="button" class="btn btn-ghost btn-sm btn-edit-user" data-id="${u.id}">${t('usr_edit')}</button>
                 <button type="button" class="btn btn-ghost btn-sm btn-reset-pwd" data-id="${u.id}" data-u="${escapeHtml(u.username)}">${t('usr_reset_pwd')}</button>
                 ${
@@ -1946,14 +1948,14 @@ async function renderSessionEditorScreen(classId, sessionId = null) {
         <div class="md-editor-shell">
           <div class="md-toolbar">
             <div class="md-toolbar-btns">
-              <button type="button" class="md-tool-btn" data-md="bold" title="Bold"><strong>B</strong></button>
-              <button type="button" class="md-tool-btn" data-md="italic" title="Italic"><em>I</em></button>
+              <button type="button" class="md-tool-btn" data-md="bold" title="Bold">B</button>
+              <button type="button" class="md-tool-btn" data-md="italic" title="Italic">I</button>
               <button type="button" class="md-tool-btn" data-md="h2" title="Heading">H2</button>
-              <button type="button" class="md-tool-btn" data-md="ul" title="List">• List</button>
-              <button type="button" class="md-tool-btn" data-md="link" title="Link">🔗 Link</button>
-              <button type="button" class="md-tool-btn" data-md="table" title="Table">⊞ Table</button>
-              <button type="button" class="md-tool-btn" data-md="code" title="Code Block">&lt;/&gt; Code</button>
-              <button type="button" class="md-tool-btn" id="btn-md-image">🖼 ${t('ses_insert_image')}</button>
+              <button type="button" class="md-tool-btn" data-md="ul" title="List">List</button>
+              <button type="button" class="md-tool-btn" data-md="link" title="Link">Link</button>
+              <button type="button" class="md-tool-btn" data-md="table" title="Table">Table</button>
+              <button type="button" class="md-tool-btn" data-md="code" title="Code Block">Code</button>
+              <button type="button" class="md-tool-btn" id="btn-md-image">${t('ses_insert_image')}</button>
               <input type="file" id="md-image-input" accept=".jpg,.jpeg,.png,.gif,.webp" style="display:none;" />
             </div>
 
@@ -2114,7 +2116,7 @@ async function renderSessionEditorScreen(classId, sessionId = null) {
       .map(
         (a) => `
       <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border:1px solid var(--border-color);border-radius:var(--radius-sm);">
-        <span>📎 ${escapeHtml(a.original_name)} (${formatBytes(a.size_bytes)})</span>
+        <span>${escapeHtml(a.original_name)} (${formatBytes(a.size_bytes)})</span>
         <button type="button" class="btn btn-danger btn-sm btn-del-existing-att" data-id="${a.id}">Xóa</button>
       </div>
     `
@@ -2125,7 +2127,7 @@ async function renderSessionEditorScreen(classId, sessionId = null) {
       .map(
         (f, idx) => `
       <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border:1px dashed var(--text-main);border-radius:var(--radius-sm);">
-        <span>📎 [Mới] ${escapeHtml(f.name)} (${formatBytes(f.size)})</span>
+        <span>[Mới] ${escapeHtml(f.name)} (${formatBytes(f.size)})</span>
         <button type="button" class="btn btn-ghost btn-sm btn-del-pending-att" data-idx="${idx}">Bỏ chọn</button>
       </div>
     `
@@ -2256,7 +2258,7 @@ async function renderSessionDetailScreen(classId, sessionId) {
 
     app.innerHTML = `
       <div style="margin-bottom:12px;">
-        <a href="#/classes/${classId}" class="btn btn-ghost btn-sm">← ${escapeHtml(cls.name)}</a>
+        <a href="#/classes/${classId}" class="btn btn-ghost btn-sm">${escapeHtml(cls.name)}</a>
       </div>
 
       <div class="page-header">
@@ -2266,10 +2268,10 @@ async function renderSessionDetailScreen(classId, sessionId) {
             ${session.status === 'draft' ? `<span class="badge badge-muted">${t('status_draft')}</span>` : ''}
           </div>
           <p class="page-subtitle">
-            Ngày học: <strong>${formatDateOnly(session.session_date)}</strong>
+            Ngày học: ${formatDateOnly(session.session_date)}
             ${
               session.requires_submission
-                ? ` · Deadline: <strong>${session.deadline ? formatDateTime(session.deadline) : 'Không giới hạn'}</strong>`
+                ? ` · Deadline: ${session.deadline ? formatDateTime(session.deadline) : 'Không giới hạn'}`
                 : ` · ${t('sub_no_requirement')}`
             }
           </p>
@@ -2301,13 +2303,13 @@ async function renderSessionDetailScreen(classId, sessionId) {
           attachments.length > 0
             ? `
           <div style="margin-top:28px;padding-top:16px;border-top:1px solid var(--border-color);">
-            <h3 style="font-size:15px;margin:0 0 10px;">📎 Tài liệu đính kèm (${attachments.length})</h3>
+            <h3 style="font-size:15px;margin:0 0 10px;">Tài liệu đính kèm (${attachments.length})</h3>
             <div style="display:flex;flex-wrap:wrap;gap:8px;">
               ${attachments
                 .map(
                   (a) => `
                 <a href="/api/attachments/${a.id}/download" class="btn btn-ghost btn-sm" download>
-                  ⬇ ${escapeHtml(a.original_name)} (${formatBytes(a.size_bytes)})
+                  ${escapeHtml(a.original_name)} (${formatBytes(a.size_bytes)})
                 </a>
               `
                 )
@@ -2403,7 +2405,7 @@ function renderStudentSubmissionBox(cls, session, mySubmission) {
               ${mySubmission.note ? `<div style="font-size:13.5px;margin-top:6px;"><em>Ghi chú: "${escapeHtml(mySubmission.note)}"</em></div>` : ''}
             </div>
             <a href="/api/submissions/${mySubmission.id}/download" class="btn btn-secondary btn-sm" download>
-              ⬇ ${t('sub_download_mine')}
+              ${t('sub_download_mine')}
             </a>
           </div>
 
@@ -2411,13 +2413,13 @@ function renderStudentSubmissionBox(cls, session, mySubmission) {
             isGraded
               ? `
             <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border-color);">
-              <div style="font-size:16px;font-weight:700;">
-                ${t('sub_score_label')}: <span class="badge badge-graded" style="font-size:15px;">${mySubmission.score !== null ? `${mySubmission.score} / 10` : 'Đã nhận xét'}</span>
+              <div style="font-size:15px;">
+                ${t('sub_score_label')}: <span class="badge badge-graded" style="font-size:14px;">${mySubmission.score !== null ? `${mySubmission.score} / 10` : 'Đã nhận xét'}</span>
                 ${mySubmission.needs_regrade ? `<span class="badge" style="margin-left:6px;">${t('sub_needs_regrade')}</span>` : ''}
               </div>
               ${
                 mySubmission.feedback
-                  ? `<div style="margin-top:8px;"><strong>${t('sub_teacher_feedback')}:</strong><br/><div style="white-space:pre-wrap;margin-top:4px;">${escapeHtml(mySubmission.feedback)}</div></div>`
+                  ? `<div style="margin-top:8px;">${t('sub_teacher_feedback')}:<br/><div style="white-space:pre-wrap;margin-top:4px;">${escapeHtml(mySubmission.feedback)}</div></div>`
                   : ''
               }
             </div>
@@ -2437,11 +2439,11 @@ function renderStudentSubmissionBox(cls, session, mySubmission) {
           ? `
         <div id="sub-upload-err"></div>
         <div class="dropzone" id="sub-dropzone">
-          <div style="font-weight:600;margin-bottom:4px;">${t('sub_drop_hint')}</div>
+          <div style="margin-bottom:4px;">${t('sub_drop_hint')}</div>
           <div style="font-size:12.5px;color:var(--text-muted);">
             Tối đa 1 file ≤ ${maxMB} MB · Định dạng: ${allowedExts.join(', ')}
           </div>
-          <div id="sub-selected-file" style="margin-top:10px;font-weight:600;"></div>
+          <div id="sub-selected-file" style="margin-top:10px;"></div>
           <input type="file" id="sub-file-input" style="display:none;" />
         </div>
 
@@ -2489,7 +2491,7 @@ function renderStudentSubmissionBox(cls, session, mySubmission) {
       return;
     }
     chosenFile = file;
-    selectedLabel.textContent = `📄 Đã chọn: ${file.name} (${formatBytes(file.size)})`;
+    selectedLabel.textContent = `Đã chọn: ${file.name} (${formatBytes(file.size)})`;
   };
 
   dropzone.addEventListener('click', () => fileInput.click());
@@ -2588,18 +2590,18 @@ async function renderSessionSubmissionsScreen(classId, sessionId) {
 
     app.innerHTML = `
       <div style="margin-bottom:12px;">
-        <a href="#/classes/${classId}/sessions/${sessionId}" class="btn btn-ghost btn-sm">← ${escapeHtml(session.title)}</a>
+        <a href="#/classes/${classId}/sessions/${sessionId}" class="btn btn-ghost btn-sm">${escapeHtml(session.title)}</a>
       </div>
 
       <div class="page-header">
         <div>
           <h1 class="page-title">${t('grd_list_title')}: ${escapeHtml(session.title)}</h1>
           <p class="page-subtitle">
-            Lớp: <strong>${escapeHtml(cls.name)}</strong> · Deadline: ${session.deadline ? formatDateTime(session.deadline) : 'Không giới hạn'}
+            Lớp: ${escapeHtml(cls.name)} · Deadline: ${session.deadline ? formatDateTime(session.deadline) : 'Không giới hạn'}
           </p>
         </div>
         <a href="/api/sessions/${sessionId}/submissions-zip" class="btn btn-secondary btn-sm" download>
-          📦 ${t('grd_download_zip')}
+          ${t('grd_download_zip')}
         </a>
       </div>
 
@@ -2731,11 +2733,11 @@ async function openGradingModal(item, onSaved) {
           ${item.is_late ? `<span class="badge badge-late">${t('sub_late')}</span>` : ''}
         </div>
         <a href="/api/submissions/${item.submission_id}/download" class="btn btn-secondary btn-sm" download>
-          ⬇ ${t('grd_download_file')}
+          ${t('grd_download_file')}
         </a>
       </div>
 
-      ${item.note ? `<div class="alert" style="margin-bottom:12px;"><strong>Ghi chú của HS:</strong> ${escapeHtml(item.note)}</div>` : ''}
+      ${item.note ? `<div class="alert" style="margin-bottom:12px;">Ghi chú của HS: ${escapeHtml(item.note)}</div>` : ''}
 
       <div style="margin-bottom:16px;">
         <div class="form-label">${t('grd_preview_title')}</div>
@@ -2759,7 +2761,7 @@ async function openGradingModal(item, onSaved) {
             ${
               item.score !== null || item.graded_at
                 ? `<button type="button" class="btn btn-secondary btn-sm" id="btn-allow-resubmit">
-                    🔓 ${t('grd_allow_resubmit_btn')}
+                    ${t('grd_allow_resubmit_btn')}
                    </button>`
                 : ''
             }
@@ -2840,10 +2842,10 @@ async function renderNotificationsScreen() {
                   const title = state.lang === 'en' ? n.title_en : n.title_vi;
                   const body = state.lang === 'en' ? n.body_en : n.body_vi;
                   return `
-                    <div class="card notif-item" data-id="${n.id}" data-link="${escapeHtml(n.link_url)}" style="margin:0;cursor:pointer;border-left:${n.is_read ? '1px solid var(--border-color)' : '4px solid var(--text-main)'};">
+                    <div class="card notif-item" data-id="${n.id}" data-link="${escapeHtml(n.link_url)}" style="margin:0;cursor:pointer;border-left:${n.is_read ? '1px solid var(--border-color)' : '3px solid var(--accent-blue)'};">
                       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
                         <div>
-                          <div style="font-weight:700;margin-bottom:4px;">
+                          <div style="font-weight:500;margin-bottom:4px;">
                             ${escapeHtml(title)}
                             ${!n.is_read ? `<span class="badge badge-dark" style="margin-left:6px;">${t('not_unread')}</span>` : ''}
                           </div>
@@ -2958,7 +2960,7 @@ function renderProfileScreen() {
         <p style="font-size:13.5px;color:var(--text-muted);">
           Đổi mật khẩu định kỳ để bảo vệ tài khoản của bạn.
         </p>
-        <a href="#/change-password" class="btn btn-secondary">${t('pwd_change_title')} →</a>
+        <a href="#/change-password" class="btn btn-secondary">${t('pwd_change_title')}</a>
       </div>
     </div>
   `;
@@ -3216,6 +3218,7 @@ async function route() {
     clearInterval(state.autoSaveTimer);
     state.autoSaveTimer = null;
   }
+  cleanupExamListeners();
   state.mobileMenuOpen = false;
   closeModal();
 
@@ -3280,6 +3283,34 @@ async function route() {
 
   if (pathPart === '/classes') {
     await renderClassesListScreen();
+    return;
+  }
+
+  if (pathPart === '/exams') {
+    await renderExamsListScreen(state.user);
+    return;
+  }
+
+  if (pathPart === '/exams/new') {
+    await renderExamEditorScreen(state.user, null);
+    return;
+  }
+
+  const examEditMatch = pathPart.match(/^\/exams\/(\d+)\/edit$/);
+  if (examEditMatch) {
+    await renderExamEditorScreen(state.user, Number(examEditMatch[1]));
+    return;
+  }
+
+  const examAttemptsMatch = pathPart.match(/^\/exams\/(\d+)\/attempts$/);
+  if (examAttemptsMatch) {
+    await renderExamAttemptsScreen(state.user, Number(examAttemptsMatch[1]));
+    return;
+  }
+
+  const examDetailMatch = pathPart.match(/^\/exams\/(\d+)$/);
+  if (examDetailMatch) {
+    await renderExamTakeOrViewScreen(state.user, Number(examDetailMatch[1]));
     return;
   }
 
