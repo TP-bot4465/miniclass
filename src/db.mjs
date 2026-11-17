@@ -198,10 +198,9 @@ export function initSchema(db) {
   const twelveMonthsAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
   db.prepare('DELETE FROM audit_logs WHERE created_at < ?').run(twelveMonthsAgo);
 
-  // Seed initial data if no users exist yet, or migrate away from old demo seed if gv_minh is present
+  // Seed initial accounts only if no users exist yet
   const userCount = db.prepare('SELECT COUNT(*) AS cnt FROM users').get().cnt;
-  const hasOldDemo = db.prepare("SELECT id FROM users WHERE username = 'gv_minh'").get();
-  if (userCount === 0 || hasOldDemo) {
+  if (userCount === 0) {
     seedInitialData(db);
   }
 }
@@ -257,41 +256,10 @@ export function logAudit(db, { actorId, actorUsername, action, targetType, targe
 export function seedInitialData(db = getDb()) {
   const now = new Date().toISOString();
 
-  // Remove old demo data if present
-  db.exec('PRAGMA foreign_keys = OFF;');
-  try {
-    db.exec(`
-      DELETE FROM exam_anticheat_logs;
-      DELETE FROM exam_answers;
-      DELETE FROM exam_attempts;
-      DELETE FROM exam_questions;
-      DELETE FROM exams;
-    `);
-  } catch {}
-  db.exec(`
-    DELETE FROM uploaded_images;
-    DELETE FROM submissions;
-    DELETE FROM session_attachments;
-    DELETE FROM class_sessions;
-    DELETE FROM class_members;
-    DELETE FROM classes;
-    DELETE FROM notifications;
-    DELETE FROM email_queue;
-    DELETE FROM sessions_auth;
-    DELETE FROM users WHERE username IN ('gv_minh', 'gv_lan', 'hs_an', 'hs_binh', 'hs_chi', 'hs_khanh');
-  `);
-  db.exec('PRAGMA foreign_keys = ON;');
-
   const upsertUser = db.prepare(`
     INSERT INTO users (username, email, password_hash, full_name, role, status, must_change_password, language, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, 'active', 0, 'vi', ?, ?)
-    ON CONFLICT(username) DO UPDATE SET
-      password_hash = excluded.password_hash,
-      full_name = excluded.full_name,
-      role = excluded.role,
-      status = 'active',
-      must_change_password = 0,
-      updated_at = excluded.updated_at
+    ON CONFLICT(username) DO NOTHING
   `);
 
   upsertUser.run(
